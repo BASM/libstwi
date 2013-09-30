@@ -19,7 +19,6 @@ CFLAGS+=-Wall -Werror -Wmissing-declarations -Wdeclaration-after-statement
 all: dirs prgtest
 	./prgtest
 
-
 obj/%.o: src/%.c
 	gcc -c $(CFLAGS) -o $@ $<
 

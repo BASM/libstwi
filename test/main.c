@@ -1,32 +1,37 @@
-#include <stdio.h>
 #include <twi_sw.h>
 #include <twi_model.h>
+
+#define DEBUG
+#ifdef DEBUG
+#define D(...) ({printf("\033[32mTWI TST> \033[0m");printf(__VA_ARGS__);})
+#include <stdio.h>
+#endif /*DEBUG*/
 
 twi_model model_obj;
 twi_model *model=&model_obj;
 
-static int s_scl_set() {
-  
+static void s_cycle_wait(void *data) {
+  D("WAIT\n");
+}
+
+static void s_scl_set(void *data) {
+  twi_model *model=(twi_model*) data;
   twi_model_scl_set(model);
-
-  //printf("SCL set\n");
-  return 0;
 }
 
-static int s_scl_unset() {
+static void s_scl_unset(void *data) {
+  twi_model *model=(twi_model*) data;
   twi_model_scl_unset(model);
-
-  return 0;
 }
 
-static int s_sda_set() {
+static void s_sda_set(void *data) {
+  twi_model *model=(twi_model*) data;
   twi_model_sda_set(model);
-  return 0;
 }
 
-static int s_sda_unset() {
+static void s_sda_unset(void *data) {
+  twi_model *model=(twi_model*) data;
   twi_model_sda_unset(model);
-  return 0;
 }
 
 int main(void) {
@@ -36,13 +41,14 @@ int main(void) {
   twi_data *twi=&twi_obj;
 
   twi_model_init(model,0x4f);
-  twi->scl_set  =s_scl_set;
-  twi->scl_unset=s_scl_unset;
-  twi->sda_set  =s_sda_set;
-  twi->sda_unset=s_sda_unset;
-  twi_sw_init(twi);
+  twi->scl_up =s_scl_set;
+  twi->scl_dn =s_scl_unset;
+  twi->sda_up =s_sda_set;
+  twi->sda_dn =s_sda_unset;
+  twi->cycle_wait=s_cycle_wait;
+  twi_sw_init(twi,(void*)model);
 
-  printf("Test TWI library\n");
+  D("Test TWI library\n");
 
 
   twi_sw_req_read(twi,0x77,0x00);
@@ -51,7 +57,7 @@ int main(void) {
   twi_sw_stop(twi);
 
 
-  printf("Read result: %i\n",res);
+  D("Read result: %i\n",res);
 
   return 0;
 }
