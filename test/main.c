@@ -51,7 +51,7 @@ int main(void) {
   D("Test TWI library\n");
 
 
-  twi_sw_req_read(twi,0x77,0x00);
+  twi_sw_req_read(twi,0x4f,0x55);
   res=twi_sw_read(twi,0)<<8;
   res|=twi_sw_read(twi,1);
   twi_sw_stop(twi);
