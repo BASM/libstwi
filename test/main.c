@@ -11,7 +11,7 @@ twi_model model_obj;
 twi_model *model=&model_obj;
 
 static void s_cycle_wait(void *data) {
-  D("WAIT\n");
+  //D("WAIT\n");
 }
 
 static void s_scl_set(void *data) {
@@ -34,6 +34,10 @@ static void s_sda_unset(void *data) {
   twi_model_sda_unset(model);
 }
 
+static int s_sda_read(void *data) {
+  return 0;
+}
+
 int main(void) {
   int res;
 
@@ -45,6 +49,7 @@ int main(void) {
   twi->scl_dn =s_scl_unset;
   twi->sda_up =s_sda_set;
   twi->sda_dn =s_sda_unset;
+  twi->sda_read=s_sda_read;
   twi->cycle_wait=s_cycle_wait;
   twi_sw_init(twi,(void*)model);
 

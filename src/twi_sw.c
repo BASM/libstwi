@@ -1,4 +1,5 @@
 #include <twi_sw.h>
+#include <stdbool.h>
 
 #define DEBUG
 #ifdef DEBUG
@@ -6,10 +7,12 @@
 #include <stdio.h>
 #endif /*DEBUG*/
 
-#define SDA_UP s->sda_up(s->userdata)
-#define SDA_DN s->sda_dn(s->userdata)
-#define SCL_UP s->scl_up(s->userdata)
-#define SCL_DN s->scl_dn(s->userdata)
+#define SDA_UP ({ if (!s->sda) { s->sda_up(s->userdata); s->sda=1; } })
+#define SDA_DN ({ if ( s->sda) { s->sda_dn(s->userdata); s->sda=0; } })
+#define SDA_READ s->scl_read(s->userdata)
+
+#define SCL_UP ({ if (!s->scl) { s->scl_up(s->userdata); s->scl=1; } })
+#define SCL_DN ({ if ( s->scl) { s->scl_dn(s->userdata); s->scl=0; } })
 #define WAIT   s->cycle_wait(s->userdata)
 
 static void s_start_bit(twi_data *s) {
@@ -20,14 +23,23 @@ static void s_start_bit(twi_data *s) {
 
 static void s_send_bit(twi_data *s, int byte) {
   D("BYTE: %i\n", byte&1);
+
   SCL_DN;
-  WAIT;
-  if(byte) SDA_UP;
+  if (byte&1) SDA_UP;
+  else        SDA_DN;
   WAIT;
   SCL_UP;
   WAIT;
+}
+
+static _Bool s_ask_bit(twi_data *s) {
+  D("ASK\n");
+
   SCL_DN;
-  if(byte) SDA_DN;
+  WAIT;
+  SCL_UP;
+  WAIT;
+  return SDA_READ;
 }
 
 /////////////////////////////////////////////////////
@@ -35,6 +47,8 @@ int twi_sw_init(twi_data *s, void *userdata) {
   D("TWI init\n");
 
   s->userdata=userdata;
+  s->scl=0;
+  s->sda=0;
   SDA_UP;
   SCL_UP;
 
@@ -48,7 +62,11 @@ int twi_sw_req_read(twi_data *s,int addr,int reg) {
 
   D("ADDR: %x\n",addr);
   i=7;
-  while(i) s_send_bit(s,addr>>--i);
+  while (i) s_send_bit(s,addr>>--i);
+  s_send_bit(s,0);//WRITE
+  if (s_ask_bit(s)==false) {
+    return 1;
+  }
 
   D("TWI req read %x, %x\n",addr,reg);
 
