@@ -35,7 +35,8 @@ static void s_sda_unset(void *data) {
 }
 
 static int s_sda_read(void *data) {
-  return 0;
+  twi_model *model=data;
+  return twi_model_getsda(model);
 }
 
 int main(void) {
@@ -45,9 +46,11 @@ int main(void) {
   twi_data *twi=&twi_obj;
 
   twi_model_init(model,0x4f);
-  twi->scl_up =s_scl_set;
+
+
+  twi->scl_rl =s_scl_set;
   twi->scl_dn =s_scl_unset;
-  twi->sda_up =s_sda_set;
+  twi->sda_rl =s_sda_set;
   twi->sda_dn =s_sda_unset;
   twi->sda_read=s_sda_read;
   twi->cycle_wait=s_cycle_wait;
@@ -56,7 +59,11 @@ int main(void) {
   D("Test TWI library\n");
 
 
-  twi_sw_req_read(twi,0x4f,0x55);
+  if (twi_sw_req_read(twi,0x4f,0x55)) {
+    D("NO ANSWER!\n");
+  }else{
+    D("SLAVE ANSWER!\n");
+  }
   res=twi_sw_read(twi,0)<<8;
   res|=twi_sw_read(twi,1);
   twi_sw_stop(twi);

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include <twi_model.h>
 
 #define DEBUG
@@ -12,6 +13,9 @@
 #include <stdio.h>
 #endif /*DEBUG*/
 
+_Bool twi_model_getsda(twi_model *s) {
+  return s->down_sda;
+}
 
 static int s_Start_cond(twi_model *s) {
   if (s->inwork==1) {
@@ -37,27 +41,43 @@ static int s_Stop_cond(twi_model *s) {
   return 0;
 }
 
-static int s_Getbyte(twi_model *s, int byte) {
-  D("BITE %x,idx:%d\n", byte,s->idx);
+static int s_ask(twi_model *s) {
+  D("XXX\n");
+  if (s->stage==STAGE_ADDR) {
+    if (s->addr == s->self_addr) {
+      s->ask=true;
+      D("ASK DOWN\n");
+      s->down_sda=true;
+      return 1;
+    }
+  }
+  return 0;
+}
 
-  if (s->idx==8) {
+static int s_Getbyte(twi_model *s, int byte) {
+  DB("BITE %x,idx:%d\n", byte,s->idx);
+
+  if (s->idx==7) {
     s->dir=byte;
     s->idx++;
     D("ADDR: %x\n", s->addr);
-    D("DIR: %x\n", byte);
+    D("DIR: %s\n", (byte)?"write":"read");
     return 0;
+  }else if (s->idx==8) {
+    if (s_ask(s) == false) {
+      s->inwork=false;
+    }
   }
-
 
   switch(s->stage) {
     case STAGE_ADDR:
       {
-        if (s->idx==9) {
+        if (s->idx==8) {
           s->idx=0;
           s->stage=STAGE_REG;
-          D("BYTE: %x\n",s->reg);
+          D("ADDR: %x, DIR: %s\n",s->reg,(byte)?"write":"read");
         }
-        if (byte) s->addr|=1<<(7-s->idx);
+        if (byte) s->addr|=1<<(6-s->idx);
         s->idx++;
       } break;
     case STAGE_REG:
@@ -81,12 +101,20 @@ int twi_model_init(twi_model *self, int addr) {
 int twi_model_scl_set(twi_model *s) {
   s->scl=1;
   DB("SCL_SET\n");
-  if (s->sda==1) s_Getbyte(s,1);D("BYTE 1\n");
-  if (s->sda==0) s_Getbyte(s,0);D("BYTE 0\n");
+  if (s->inwork) {
+    if (s->sda==1) s_Getbyte(s,1);
+    if (s->sda==0) s_Getbyte(s,0);
+  }
+
   return 0;
 }
 int twi_model_scl_unset(twi_model *s) {
   s->scl=0;
+  if (s->ask==true) {
+    s->ask=false;
+    D("ASK RELEASE\n");
+    s->down_sda=false;
+  }
   DB("SCL_UNSET\n");
 
   return 0;

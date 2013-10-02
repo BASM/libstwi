@@ -5,9 +5,9 @@
 typedef struct S_twi_sw_data {
   uint8_t sda,scl;
   void *userdata;
-  void (*scl_up)    (void *data);
+  void (*scl_rl)    (void *data);
   void (*scl_dn)    (void *data);
-  void (*sda_up)    (void *data);
+  void (*sda_rl)    (void *data);
   void (*sda_dn)    (void *data);
   int  (*sda_read)  (void *data);
   void (*cycle_wait)(void *data);
