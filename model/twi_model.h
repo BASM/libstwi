@@ -7,7 +7,8 @@ typedef enum {
 
 
 typedef struct {
-  int down_sda;
+  _Bool down_scl;//Wait flag
+  _Bool down_sda;//Answer flag
   int sda;
   int scl;
 
@@ -24,7 +25,8 @@ typedef struct {
   char regs[0xff];
 } twi_model;
 
-_Bool twi_model_getsda(twi_model *self);
+_Bool twi_model_sdaget(twi_model *self);
+_Bool twi_model_sclget(twi_model *self);
 int twi_model_init(twi_model *self, int addr);
 int twi_model_scl_set(twi_model *self);
 int twi_model_scl_unset(twi_model *self);

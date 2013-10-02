@@ -36,7 +36,12 @@ static void s_sda_unset(void *data) {
 
 static int s_sda_read(void *data) {
   twi_model *model=data;
-  return twi_model_getsda(model);
+  return twi_model_sdaget(model);
+}
+
+static int s_scl_read(void *data) {
+  twi_model *model=data;
+  return twi_model_sclget(model);
 }
 
 int main(void) {
@@ -53,6 +58,7 @@ int main(void) {
   twi->sda_rl =s_sda_set;
   twi->sda_dn =s_sda_unset;
   twi->sda_read=s_sda_read;
+  twi->scl_read=s_scl_read;
   twi->cycle_wait=s_cycle_wait;
   twi_sw_init(twi,(void*)model);
 

@@ -10,6 +10,7 @@ typedef struct S_twi_sw_data {
   void (*sda_rl)    (void *data);
   void (*sda_dn)    (void *data);
   int  (*sda_read)  (void *data);
+  int  (*scl_read)  (void *data);
   void (*cycle_wait)(void *data);
 } twi_data;
 

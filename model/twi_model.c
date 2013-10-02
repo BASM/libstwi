@@ -13,7 +13,11 @@
 #include <stdio.h>
 #endif /*DEBUG*/
 
-_Bool twi_model_getsda(twi_model *s) {
+_Bool twi_model_sdaget(twi_model *s) {
+  return s->down_sda;
+}
+
+_Bool twi_model_sclget(twi_model *s) {
   return s->down_sda;
 }
 
