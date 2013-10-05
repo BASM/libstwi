@@ -14,22 +14,23 @@ static void s_cycle_wait(void *data) {
   //D("WAIT\n");
 }
 
-static void s_scl_set(void *data) {
+static int s_scl_rl(void *data) {
   twi_model *model=(twi_model*) data;
   twi_model_scl_set(model);
+  return 0;
 }
 
-static void s_scl_unset(void *data) {
+static void s_scl_dn(void *data) {
   twi_model *model=(twi_model*) data;
   twi_model_scl_unset(model);
 }
 
-static void s_sda_set(void *data) {
+static void s_sda_rl(void *data) {
   twi_model *model=(twi_model*) data;
   twi_model_sda_set(model);
 }
 
-static void s_sda_unset(void *data) {
+static void s_sda_dn(void *data) {
   twi_model *model=(twi_model*) data;
   twi_model_sda_unset(model);
 }
@@ -45,7 +46,7 @@ static int s_scl_read(void *data) {
 }
 
 int main(void) {
-  int res;
+  uint16_t res;
 
   twi_data twi_obj;
   twi_data *twi=&twi_obj;
@@ -53,10 +54,10 @@ int main(void) {
   twi_model_init(model,0x4f);
 
 
-  twi->scl_rl =s_scl_set;
-  twi->scl_dn =s_scl_unset;
-  twi->sda_rl =s_sda_set;
-  twi->sda_dn =s_sda_unset;
+  twi->scl_rl =s_scl_rl;
+  twi->scl_dn =s_scl_dn;
+  twi->sda_rl =s_sda_rl;
+  twi->sda_dn =s_sda_dn;
   twi->sda_read=s_sda_read;
   twi->scl_read=s_scl_read;
   twi->cycle_wait=s_cycle_wait;
@@ -75,7 +76,7 @@ int main(void) {
   twi_sw_stop(twi);
 
 
-  D("Read result: %i\n",res);
+  D("Read result: %x\n",res);
 
   return 0;
 }

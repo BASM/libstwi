@@ -1,9 +1,10 @@
 #include <twi_sw.h>
-#include <stdbool.h>
 
 #define DEBUG
 #ifdef DEBUG
 #define D(...) ({printf("\033[31mTWI LIB> \033[0m");printf(__VA_ARGS__);})
+#define DB(...) {}
+//#define DB(...) ({printf("\033[33mTWI MOD> \033[0m");printf(__VA_ARGS__);})
 #include <stdio.h>
 #endif /*DEBUG*/
 
@@ -11,32 +12,36 @@
 #define SDA_DN ({ if ( s->sda) { s->sda_dn(s->userdata); s->sda=0; } })
 #define SDA_READ s->sda_read(s->userdata)
 
-#define SCL_RL ({ if (!s->scl) { s->scl_rl(s->userdata); s->scl=1; } })
+#define SCL_RL ({ if (!s->scl) { \
+    if (s->scl_rl(s->userdata)) return FERROR; \
+    s->scl=1; } })
 
 #define SCL_DN ({ if ( s->scl) { s->scl_dn(s->userdata); s->scl=0; } })
 #define WAIT   s->cycle_wait(s->userdata)
 
-static void s_start_bit(twi_data *s) {
+static fres s_start_bit(twi_data *s) {
   D("(Re)Start\n");
   SCL_DN;
   SDA_RL;
   WAIT;
   SCL_RL;
   SDA_DN;
+  return FTRUE;
 }
 
-static void s_stop_bit(twi_data *s) {
+static int s_stop_bit(twi_data *s) {
   D("Stop\n");
   SCL_DN;
   SDA_DN;
   WAIT;
   SCL_RL;
   SDA_RL;
+  return FTRUE;
 }
 
 
-static void s_send_bit(twi_data *s, int byte) {
-  D("BYTE: %i\n", byte&1);
+static fres s_send_bit(twi_data *s, int byte) {
+  DB("BITE: %i\n", byte&1);
 
   SCL_DN;
   if (byte&1) SDA_RL;
@@ -44,11 +49,10 @@ static void s_send_bit(twi_data *s, int byte) {
   WAIT;
   SCL_RL;
   WAIT;
+  return FTRUE;
 }
 
-static _Bool s_ask_bit(twi_data *s) {
-  D("ASK\n");
-
+static fres s_get_bit(twi_data *s) {
   SCL_DN;
   WAIT;
   SCL_RL;
@@ -78,20 +82,43 @@ int twi_sw_req_read(twi_data *s,int addr,int reg) {
   i=7;
   while (i) s_send_bit(s,addr>>--i);
   s_send_bit(s,0);//WRITE
-  if (s_ask_bit(s)==false) {
+  if (s_get_bit(s)==false) {//NASK get
+    s_stop_bit(s);
+    return 1;
+  }
+  i=8;
+  while (i) s_send_bit(s,reg>>--i);
+  if (s_get_bit(s)==false) { //NASK get
+    D("NASK\n");
+    return 1;
+  }
+  s_start_bit(s);
+  i=7;
+  while (i) s_send_bit(s,addr>>--i);
+  s_send_bit(s,1);//READ
+  if (s_get_bit(s)==false) {
+    D("NO ASK\n");
     s_stop_bit(s);
     return 1;
   }
 
-  D("TWI req read %x, %x\n",addr,reg);
-
   return 0;
 }
 
-int twi_sw_read(twi_data *self,int type) {
-  D("TWI read %i\n",type);
+int twi_sw_read(twi_data *s,int type) {
+  uint8_t data=0;
+  int     i;
 
-  return 0;
+  D("TWI read %i\n",type);
+  i=8;
+  while (i) {
+    --i; 
+    if (s_get_bit(s)==0) data|=1<<i;
+  }
+  if (type==0) s_send_bit(s,0);//ASK send
+  else         s_send_bit(s,1);//NACK send
+  D("DATA GET: %x\n",data);
+  return data;
 }
 
 int twi_sw_stop(twi_data *self) {

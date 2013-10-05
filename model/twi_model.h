@@ -2,8 +2,10 @@
 
 typedef enum {
   STAGE_ADDR,
-  STAGE_REG
+  STAGE_REG,
+  STAGE_DATA,
 } twi_model_stages;
+
 
 
 typedef struct {
@@ -13,6 +15,8 @@ typedef struct {
   int scl;
 
   twi_model_stages stage;
+  int byten;
+
   uint8_t dir; //0--write, 1--read
   _Bool inwork;
   _Bool ask;

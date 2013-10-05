@@ -22,17 +22,20 @@ _Bool twi_model_sclget(twi_model *s) {
 }
 
 static int s_Start_cond(twi_model *s) {
-  if (s->inwork==1) {
-    D("RE START COND\n");
+  if (s->inwork==true) {
+    D("RESTART COND\n");
+    D("PARAMS: addr:%x, reg: %x\n", s->addr, s->reg);
+    s->byten++;
   }else{
     D("START COND\n");
+    s->byten=0;
   }
 
   s->stage=STAGE_ADDR;
   s->addr=0;
   s->idx=0;
   s->reg=0;
-  s->inwork=1;
+  s->inwork=true;
 
   return 0;
 }
@@ -40,55 +43,80 @@ static int s_Start_cond(twi_model *s) {
 static int s_Stop_cond(twi_model *s) {
   D("STOP COND\n");
 
-  s->inwork=0;
+  s->inwork=false;
 
   return 0;
 }
 
-static int s_ask(twi_model *s) {
-  D("XXX\n");
-  if (s->stage==STAGE_ADDR) {
-    if (s->addr == s->self_addr) {
-      s->ask=true;
-      D("ASK DOWN\n");
-      s->down_sda=true;
-      return 1;
+static _Bool s_ask(twi_model *s) {
+  if (s->addr == s->self_addr) {
+    s->ask=true;
+    s->down_sda=true;
+  
+    switch(s->stage) {
+      case STAGE_ADDR: 
+        D("ADDR: %x %s\n", 
+            s->addr,(s->dir)?("READ"):("WRITE") ); break;
+      case STAGE_REG: D("ADDR: %x, REG: %x\n", s->addr, s->reg); break;
+      case STAGE_DATA: 
+          D("ADDR: %x, REG: %x, dir: %i\n", 
+              s->addr, s->reg, s->dir); break;
     }
+
+    return true;
   }
-  return 0;
+  return false;
 }
 
 static int s_Getbyte(twi_model *s, int byte) {
   DB("BITE %x,idx:%d\n", byte,s->idx);
 
-  if (s->idx==7) {
-    s->dir=byte;
-    s->idx++;
-    D("ADDR: %x\n", s->addr);
-    D("DIR: %s\n", (byte)?"write":"read");
-    return 0;
-  }else if (s->idx==8) {
-    if (s_ask(s) == false) {
+  if (s->idx==8) {
+    if (s_ask(s)==false) {
       s->inwork=false;
+      return 0;
     }
   }
 
   switch(s->stage) {
     case STAGE_ADDR:
       {
-        if (s->idx==8) {
-          s->idx=0;
-          s->stage=STAGE_REG;
-          D("ADDR: %x, DIR: %s\n",s->reg,(byte)?"write":"read");
-        }
-        if (byte) s->addr|=1<<(6-s->idx);
-        s->idx++;
+        if (s->idx==7) {
+          s->dir=byte;
+        } else if (s->idx==8) {
+          s->idx=-1;
+          if (s->byten==0) s->stage=STAGE_REG;
+          else             s->stage=STAGE_DATA;
+        } else if (byte)
+          s->addr|=1<<(6-s->idx);
       } break;
     case STAGE_REG:
       {
-        if (byte) s->reg|=1<<s->idx++;
+        if (byte) s->reg|=1<<(7-s->idx);
+      } break;
+    case STAGE_DATA:
+      {
+        D("DIR: %x,%i\n",s->dir,s->idx);
+        if (s->dir == 1) { //READ
+          uint8_t data=0x55;
+          if (s->idx==8) {
+            s->idx=-1;
+            D("ASK: %i\n",byte);
+          } else {
+            if (!((data>>(7-s->idx))&0x01)) {
+              s->down_sda=1;
+            }else{
+              s->down_sda=0;
+            }
+          }
+          printf("DOWN: %x\n",s->down_sda);
+
+        } else { // WRITE 
+           //FIXME
+        }
       } break;
   }
+  s->idx++;
   return 0;
 }
 
@@ -116,7 +144,6 @@ int twi_model_scl_unset(twi_model *s) {
   s->scl=0;
   if (s->ask==true) {
     s->ask=false;
-    D("ASK RELEASE\n");
     s->down_sda=false;
   }
   DB("SCL_UNSET\n");
