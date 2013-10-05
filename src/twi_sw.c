@@ -108,8 +108,6 @@ int twi_sw_req_read(twi_data *s,int addr,int reg) {
 int twi_sw_read(twi_data *s,int type) {
   uint8_t data=0;
   int     i;
-
-  D("TWI read %i\n",type);
   i=8;
   while (i) {
     --i; 
@@ -121,9 +119,8 @@ int twi_sw_read(twi_data *s,int type) {
   return data;
 }
 
-int twi_sw_stop(twi_data *self) {
-  D("TWI stop\n");
-
+int twi_sw_stop(twi_data *s) {
+  s_stop_bit(s);
   return 0;
 }
 

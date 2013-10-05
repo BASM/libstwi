@@ -96,7 +96,6 @@ static int s_Getbyte(twi_model *s, int byte) {
       } break;
     case STAGE_DATA:
       {
-        D("DIR: %x,%i\n",s->dir,s->idx);
         if (s->dir == 1) { //READ
           uint8_t data=0x55;
           if (s->idx==8) {
@@ -109,8 +108,6 @@ static int s_Getbyte(twi_model *s, int byte) {
               s->down_sda=0;
             }
           }
-          printf("DOWN: %x\n",s->down_sda);
-
         } else { // WRITE 
            //FIXME
         }
