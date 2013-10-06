@@ -6,6 +6,9 @@
 #define DB(...) {}
 //#define DB(...) ({printf("\033[33mTWI MOD> \033[0m");printf(__VA_ARGS__);})
 #include <stdio.h>
+#else
+#define D(...)
+#define DB(...)
 #endif /*DEBUG*/
 
 #define SDA_RL ({ if (!s->sda) { s->sda_rl(s->userdata); s->sda=1; } })
@@ -21,11 +24,15 @@
 
 static fres s_start_bit(twi_data *s) {
   D("(Re)Start\n");
-  SCL_DN;
-  SDA_RL;
-  WAIT;
+  if (s->sda==0) {
+    SCL_DN;
+    SDA_RL;
+    WAIT;
+  }
   SCL_RL;
+  WAIT;
   SDA_DN;
+  WAIT;
   return FTRUE;
 }
 
@@ -44,6 +51,7 @@ static fres s_send_bit(twi_data *s, int byte) {
   DB("BITE: %i\n", byte&1);
 
   SCL_DN;
+  WAIT;
   if (byte&1) SDA_RL;
   else        SDA_DN;
   WAIT;
@@ -76,20 +84,22 @@ int twi_sw_init(twi_data *s, void *userdata) {
 int twi_sw_req_read(twi_data *s,int addr,int reg) {
   int i;
 
+  D("REQ READ\n");
+  D("ADDR: %x\n",addr);
   s_start_bit(s);
 
-  D("ADDR: %x\n",addr);
   i=7;
   while (i) s_send_bit(s,addr>>--i);
   s_send_bit(s,0);//WRITE
   if (s_get_bit(s)==false) {//NASK get
     s_stop_bit(s);
+    D("NASK 1\n");
     return 1;
   }
   i=8;
   while (i) s_send_bit(s,reg>>--i);
   if (s_get_bit(s)==false) { //NASK get
-    D("NASK\n");
+    D("NASK 2\n");
     return 1;
   }
   s_start_bit(s);
@@ -97,8 +107,8 @@ int twi_sw_req_read(twi_data *s,int addr,int reg) {
   while (i) s_send_bit(s,addr>>--i);
   s_send_bit(s,1);//READ
   if (s_get_bit(s)==false) {
-    D("NO ASK\n");
     s_stop_bit(s);
+    D("NASK 3\n");
     return 1;
   }
 
@@ -108,6 +118,8 @@ int twi_sw_req_read(twi_data *s,int addr,int reg) {
 int twi_sw_read(twi_data *s,int type) {
   uint8_t data=0;
   int     i;
+  
+  D("READ\n");
   i=8;
   while (i) {
     --i; 

@@ -17,7 +17,7 @@ OBJS+=$(OBJS_LIB)
 
 DEFAULT=all
 
-CFLAGS+=-Iinclude
+CFLAGS+=-Iinclude  -mmcu=atmega328p
 CFLAGS+=-Imodel
 CFLAGS+=-Wall -Werror -Wmissing-declarations -Wdeclaration-after-statement
 
