@@ -1,4 +1,4 @@
-CC=avr-gcc
+#CC=avr-gcc
 
 LIBA=libstwi.a
 
@@ -22,7 +22,7 @@ CFLAGS+=-Imodel
 CFLAGS+=-Wall -Werror -Wmissing-declarations -Wdeclaration-after-statement
 
 all: dirs $(LIBA) dirs prgtest
-	./prgtest
+	#./prgtest
 
 $(LIBA): $(OBJS_LIB)
 	ar rvs $@ $(OBJS_LIB)
