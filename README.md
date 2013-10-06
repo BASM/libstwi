@@ -16,4 +16,4 @@ First step: (not completed)
 * Model:  TWI slave for reading
 * Test:   Test for reading from slave ;-)
 
-Stage: research
+Stage: alpha (master only, read only)
