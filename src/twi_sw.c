@@ -1,6 +1,6 @@
 #include <twi_sw.h>
 
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 #define D(...) ({printf("\033[31mTWI LIB> \033[0m");printf(__VA_ARGS__);})
 #define DB(...) {}
@@ -29,9 +29,12 @@ static fres s_start_bit(twi_data *s) {
     SDA_RL;
     WAIT;
   }
+  WAIT;
   SCL_RL;
   WAIT;
   SDA_DN;
+  WAIT;
+  SCL_DN;
   WAIT;
   return FTRUE;
 }
@@ -42,7 +45,9 @@ static int s_stop_bit(twi_data *s) {
   SDA_DN;
   WAIT;
   SCL_RL;
+  WAIT;
   SDA_RL;
+  WAIT;
   return FTRUE;
 }
 
@@ -51,7 +56,6 @@ static fres s_send_bit(twi_data *s, int byte) {
   DB("BITE: %i\n", byte&1);
 
   SCL_DN;
-  WAIT;
   if (byte&1) SDA_RL;
   else        SDA_DN;
   WAIT;
