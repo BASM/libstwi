@@ -24,8 +24,8 @@
 
 static fres s_start_bit(twi_data *s) {
   D("(Re)Start\n");
+  SCL_DN;
   if (s->sda==0) {
-    SCL_DN;
     SDA_RL;
     WAIT;
   }
@@ -62,6 +62,7 @@ static fres s_send_bit(twi_data *s, int byte) {
 
 static fres s_get_bit(twi_data *s) {
   SCL_DN;
+  if (s->sda==0) SDA_RL;
   WAIT;
   SCL_RL;
   WAIT;
