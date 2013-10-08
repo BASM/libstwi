@@ -16,4 +16,6 @@ First step: (not completed)
 * Model:  TWI slave for reading
 * Test:   Test for reading from slave ;-)
 
-Stage: alpha (master only, read only)
+Stage: stable (master only, read only)
+  
+BUG: have double wait on (RE)Start sending.
